@@ -39,6 +39,7 @@ Os dados incluem atributos básicos, estatísticas, tipos, movimentos, espécies
 4. O programa criará o arquivo pokemon_dw.db com todas as tabelas e dados.
 
 📊 Visualização dos dados
+
 Você pode explorar os dados de duas formas:
 
 Usando Python
