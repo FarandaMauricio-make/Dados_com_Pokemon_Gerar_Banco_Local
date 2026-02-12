@@ -1,95 +1,117 @@
-# Pokémon Data Warehouse
+# 🔴⚪ PokéData Warehouse ETL
 
-Este projeto conecta-se à **PokéAPI** e salva informações detalhadas sobre todos os pokémons em um banco de dados **SQLite**.  
-Os dados incluem atributos básicos, estatísticas, tipos, movimentos, espécies e cadeias de evolução.
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
+![SQLite](https://img.shields.io/badge/Database-SQLite3-green)
+![Aiohttp](https://img.shields.io/badge/Async-Aiohttp-red)
+![Status](https://img.shields.io/badge/Status-Stable-brightgreen)
 
----
+> **Pipeline de Dados Assíncrono** (ETL) que extrai, transforma e carrega o universo Pokémon inteiro da [PokéAPI](https://pokeapi.co/) para um Data Warehouse relacional local (SQLite), otimizado para alta performance e resiliência.
 
-## 🚀 Funcionalidades
-- Criação automática de tabelas no banco `pokemon_dw.db`:
-  - **pokemon**: dados básicos (id, nome, altura, peso, experiência base).  
-  - **pokemon_stats**: estatísticas base (HP, ataque, defesa, etc.).  
-  - **pokemon_types**: tipos de cada pokémon (fogo, água, planta...).  
-  - **pokemon_moves**: movimentos/ataques (limitados a 5 por pokémon).  
-  - **species**: informações adicionais (taxa de captura, lendário, mítico, habitat, cor).  
-  - **evolution**: cadeias de evolução e condições (nível, item, horário, etc.).  
+## 📋 Sobre o Projeto
 
-- Busca assíncrona em **lotes** (batch) usando `aiohttp` e `asyncio`.  
-- **Retry automático** em caso de falha de conexão com a API.  
-- Evita duplicados verificando se o pokémon já existe no banco.  
-- Exibe progresso durante a execução.  
+Este projeto resolve o problema de latência e limites de requisição ao trabalhar com APIs públicas. Em vez de consultar a API em tempo real para cada análise, este script constrói um **Banco de Dados Relacional** completo na sua máquina.
+
+A arquitetura utiliza **Python Async (asyncio + aiohttp)** para realizar requisições concorrentes em lotes, tornando a coleta de dados infinitamente mais rápida que loops tradicionais, enquanto mantém a integridade relacional entre Pokémons, espécies, evoluções e movimentos.
 
 ---
 
-## 📦 Requisitos
-- Python 3.9+  
-- Bibliotecas:
-  ```bash
-  pip install aiohttp requests
+## 🚀 Funcionalidades de Engenharia de Dados
 
-⚙️ Como executar
-1. Clone ou copie este código para sua máquina.
+### 1. ⚡ Alta Performance (Concurrency)
+- **Extração Assíncrona:** Utiliza `aiohttp` para buscar dados em paralelo (Lotes de 20 requests simultâneos).
+- **Sem Bloqueios:** O script não "trava" esperando uma resposta da API para iniciar a próxima.
 
-2. Instale as dependências com pip install aiohttp requests.
+### 2. 🛡️ Resiliência e Robustez
+- **Retry Logic:** Implementação inteligente de tentativas (`fetch_with_retry`). Se a API falhar ou der timeout, o script espera e tenta novamente até 3 vezes antes de desistir.
+- **Transações Atômicas:** *Commits* no banco são feitos por lotes, garantindo que você não perca tudo se a internet cair no meio do processo.
 
-3. Execute o script:
+### 3. 💾 Modelagem Relacional (Schema)
+Os dados não são apenas jogados em JSONs. Eles são normalizados em tabelas SQL conectadas por chaves estrangeiras:
+- **`pokemon`**: Dados base (peso, altura, xp).
+- **`pokemon_stats`**: Atributos de batalha (HP, Attack, Speed...).
+- **`pokemon_types`**: Tipagem (Fogo, Água, etc.).
+- **`pokemon_moves`**: Movimentos e como são aprendidos.
+- **`species`**: Dados biológicos, cor, habitat e se é lendário/mítico.
+- **`evolution`**: Cadeia complexa de evolução mapeada (quem evolui para quem e como).
 
-  python pokemon_pc.py
+---
 
-4. O programa criará o arquivo pokemon_dw.db com todas as tabelas e dados.
+## 🛠️ Tecnologias Utilizadas
 
-📊 Visualização dos dados
+* **[Python 3.10+](https://www.python.org/):** Linguagem core.
+* **[Aiohttp](https://docs.aiohttp.org/):** Cliente HTTP assíncrono para requests paralelos.
+* **[Asyncio](https://docs.python.org/3/library/asyncio.html):** Gerenciamento de loop de eventos e concorrência.
+* **[SQLite3](https://www.sqlite.org/):** Banco de dados serverless e leve, embutido no Python.
+* **[Requests](https://pypi.org/project/requests/):** Usado pontualmente para requests síncronos de inicialização.
 
-Você pode explorar os dados de duas formas:
+---
 
-Usando Python
+## 📦 Como Rodar o Projeto
 
-import sqlite3
+Siga os passos para popular seu banco de dados:
 
-conn = sqlite3.connect("pokemon_dw.db")
-cursor = conn.cursor()
+1.  **Clone o repositório:**
+    ```bash
+    git clone [https://github.com/SEU-USUARIO/pokedata-etl.git](https://github.com/SEU-USUARIO/pokedata-etl.git)
+    cd pokedata-etl
+    ```
 
-cursor.execute("SELECT * FROM pokemon LIMIT 10")
-print(cursor.fetchall())
+2.  **Crie um ambiente virtual (Recomendado):**
+    ```bash
+    python -m venv venv
+    # Windows:
+    venv\Scripts\activate
+    # Linux/Mac:
+    source venv/bin/activate
+    ```
 
-conn.close()
+3.  **Instale as dependências:**
+    Você precisará do `aiohttp` e `requests`.
+    ```bash
+    pip install aiohttp requests
+    ```
 
-Usando DB Browser for SQLite
+4.  **Execute o ETL:**
+    ```bash
+    python seu_script.py
+    ```
+    *Aguarde a barra de progresso no terminal. O processo pode levar alguns minutos dependendo da sua conexão, pois baixará dados de mais de 1000 Pokémons.*
 
-1. Baixe em https://sqlitebrowser.org.
-2. Abra o arquivo pokemon_dw.db.
-3. Navegue pelas tabelas na aba Browse Data.
-4. Execute consultas SQL na aba Execute SQL.
+5.  **Verifique os Dados:**
+    Um arquivo `pokemon_dw.db` será criado na raiz. Você pode abri-lo com qualquer visualizador SQL (como *DB Browser for SQLite* ou *DBeaver*).
 
-🔎 Exemplos de consultas SQL
-Listar todos os pokémons lendários:
+---
 
-SELECT p.id, p.name
-FROM pokemon p
-JOIN species s ON p.id = s.pokemon_id
-WHERE s.is_legendary = 1;
+## 🔍 Estrutura do Banco de Dados
 
-Ver evoluções do Bulbasaur:
+O script gera automaticamente o seguinte esquema relacional:
 
-SELECT * FROM evolution WHERE from_species = 'bulbasaur';
+```mermaid
+erDiagram
+    POKEMON ||--o{ POKEMON_STATS : has
+    POKEMON ||--o{ POKEMON_TYPES : has
+    POKEMON ||--o{ POKEMON_MOVES : learns
+    POKEMON ||--|| SPECIES : is_a
+    SPECIES ||--o{ EVOLUTION : part_of_chain
 
-Tipos do Charizard:
+## ⚠️ Nota sobre a API
 
-SELECT * FROM pokemon_types WHERE pokemon_id = 6;
+Este projeto consome a **PokéAPI v2**.
 
-⚠️ Observações
-A PokéAPI retorna um número total de pokémons (count), mas alguns IDs ainda não existem.
+* **Respeite os limites:** A API é pública. O script já possui `delay` e `batch_size` configurados para não sobrecarregar o servidor deles (*Good Citizen Policy*).
 
-  Nestes casos, o programa detecta o erro 404 e pula o ID.
+---
 
-A tabela pokemon_moves está limitada a 5 movimentos por pokémon para evitar excesso de dados.
+## 🤝 Contribuição
 
-  Se quiser salvar todos, basta remover o [:5] no loop de movimentos.
+Quer melhorar a modelagem ou adicionar dados de sprites?
 
-📌 Resultado esperado
+1.  Faça um **Fork**.
+2.  Crie sua Feature Branch (`git checkout -b feature/AddSprites`).
+3.  **Commit** suas mudanças.
+4.  **Push** para a Branch.
+5.  Abra um **Pull Request**.
 
-Ao final da execução, você terá:
+---
 
-~1025 pokémons salvos (quantidade atual na PokéAPI).
-~484 evoluções registradas.
-Todas as tabelas populadas com dados consistentes e prontos para análise.
+**Gotta Catch 'Em All! (In SQL)** 🧢
