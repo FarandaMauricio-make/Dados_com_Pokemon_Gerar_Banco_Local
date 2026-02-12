@@ -93,6 +93,7 @@ erDiagram
     POKEMON ||--o{ POKEMON_MOVES : learns
     POKEMON ||--|| SPECIES : is_a
     SPECIES ||--o{ EVOLUTION : part_of_chain
+```
 
 ## ⚠️ Nota sobre a API
 
